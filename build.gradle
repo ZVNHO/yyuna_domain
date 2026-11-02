@@ -1,0 +1,42 @@
+plugins {
+    id 'java'
+    id 'war'                                                                    // 외부 Tomcat 배포용 WAR 패키징
+    id 'org.springframework.boot' version '3.1.12'                              // 카페24 Tomcat 10.0 호환
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+description = 'demo'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)                            // 카페24 JDK 17
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'      // WAR 배포 시 내장 Tomcat 제외
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testCompileOnly 'org.projectlombok:lombok'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'  // Spring Boot 3.1 호환
+    implementation 'org.springframework.security:spring-security-crypto'       // 비밀번호 BCrypt 암호화
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.named('bootWar') {
+    archiveFileName = 'ROOT.war'                                                // webapps/ROOT.war → 메인 주소
+}

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.repository.GuestbookRepository">
+    <insert id="insertGuestbook" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO guestbook (member_id, content)
+        VALUES (#{memberId}, #{content})
+    </insert>
+
+    <select id="findAll" resultType="com.example.demo.repository.entity.Guestbook">
+        SELECT g.id, g.member_id, m.name AS writer, g.content, g.created_at, g.updated_at
+        FROM guestbook g
+                 JOIN member m ON m.id = g.member_id
+        ORDER BY g.id DESC
+    </select>
+
+    <select id="findById" resultType="com.example.demo.repository.entity.Guestbook">
+        SELECT id, member_id, content, created_at, updated_at
+        FROM guestbook
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateGuestbook">
+        UPDATE guestbook
+        SET content    = #{content},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE
+        FROM guestbook
+        WHERE id = #{id}
+    </delete>
+
+    <insert id="insertReply" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO guestbook_reply (guestbook_id, parent_reply_id, member_id, content)
+        VALUES (#{guestbookId}, #{parentReplyId}, #{memberId}, #{content})
+    </insert>
+
+    <!-- 답글의 답글이면 원래 답글 작성자 이름도 함께 가져온다 -->
+    <select id="findAllReplies" resultType="com.example.demo.repository.entity.GuestbookReply">
+        SELECT r.id, r.guestbook_id, r.parent_reply_id, r.member_id, m.name AS writer,
+               pm.name AS parent_writer, r.content, r.created_at, r.updated_at
+        FROM guestbook_reply r
+                 JOIN member m ON m.id = r.member_id
+                 LEFT JOIN guestbook_reply p ON p.id = r.parent_reply_id
+                 LEFT JOIN member pm ON pm.id = p.member_id
+        ORDER BY r.id
+    </select>
+
+    <select id="findReplyById" resultType="com.example.demo.repository.entity.GuestbookReply">
+        SELECT id, guestbook_id, parent_reply_id, member_id, content, created_at, updated_at
+        FROM guestbook_reply
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateReply">
+        UPDATE guestbook_reply
+        SET content    = #{content},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteReplyById">
+        DELETE
+        FROM guestbook_reply
+        WHERE id = #{id}
+    </delete>
+</mapper>

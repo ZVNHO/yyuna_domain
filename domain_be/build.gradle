@@ -31,6 +31,7 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'  // Spring Boot 3.1 호환
     implementation 'org.springframework.security:spring-security-crypto'       // 비밀번호 BCrypt 암호화
+    implementation 'org.springframework.boot:spring-boot-starter-mail'         // 아이디·비밀번호 찾기 메일 발송
 }
 
 tasks.named('test') {

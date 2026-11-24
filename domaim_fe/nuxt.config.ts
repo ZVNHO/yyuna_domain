@@ -5,6 +5,9 @@ export default defineNuxtConfig({
     '@nuxt/ui'
   ],
 
+  // 로그인 쿠키에 따라 화면이 달라지므로 미리 렌더링하지 않고 브라우저에서 그린다
+  ssr: false,
+
   devtools: {
     enabled: true
   },

@@ -1,37 +1,13 @@
-HELP.md
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+# 각 프로젝트 폴더의 .gitignore(빌드 결과, node_modules 등)와 함께 적용된다
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
+# 백엔드 설정: DB 비밀번호가 들어 있어 올리지 않는다 → application.example.yaml을 복사해서 사용
+domain_be/src/main/resources/application.yaml
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
+# 프론트엔드 빌드 결과를 배포 때 복사해 넣는 폴더
+domain_be/src/main/resources/static/
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+# 사용하지 않는 예전 Spring 템플릿 프로젝트
+domain_be/demo/
 
-### VS Code ###
-.vscode/
+# 메일 계정 등 (원래 저장소 밖 %USERPROFILE%에 두지만 혹시 몰라)
+secret.yaml

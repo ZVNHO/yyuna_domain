@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.repository.MemberRepository">
+    <insert id="insertMember" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member (username, password, name, email)
+        VALUES (#{username}, #{password}, #{name}, #{email})
+    </insert>
+
+    <select id="existsByUsername" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM member
+        WHERE username = #{username}
+    </select>
+
+    <select id="findByUsername" resultType="com.example.demo.repository.entity.Member">
+        SELECT id, username, password, name, email, token
+        FROM member
+        WHERE username = #{username}
+    </select>
+
+    <select id="findByToken" resultType="com.example.demo.repository.entity.Member">
+        SELECT id, username, password, name, email, token
+        FROM member
+        WHERE token = #{token}
+    </select>
+
+    <select id="findById" resultType="com.example.demo.repository.entity.Member">
+        SELECT id, username, password, name, email, token
+        FROM member
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateToken">
+        UPDATE member
+        SET token = #{token}
+        WHERE id = #{id}
+    </update>
+
+    <select id="existsByEmail" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM member
+        WHERE email = #{email}
+    </select>
+
+    <select id="findByEmail" resultType="com.example.demo.repository.entity.Member">
+        SELECT id, username, password, name, email, token
+        FROM member
+        WHERE email = #{email}
+    </select>
+
+    <update id="updatePassword">
+        UPDATE member
+        SET password = #{password},
+            token    = NULL
+        WHERE id = #{id}
+    </update>
+</mapper>

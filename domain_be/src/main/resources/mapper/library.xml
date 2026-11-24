@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.repository.LibraryRepository">
+    <insert id="insertFile" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO library_file (member_id, name, file_size, content)
+        VALUES (#{memberId}, #{name}, #{fileSize}, #{content})
+    </insert>
+
+    <!-- 목록에는 파일 내용(content)을 포함하지 않는다 -->
+    <select id="findAll" resultType="com.example.demo.repository.entity.LibraryFile">
+        SELECT f.id, f.member_id, m.name AS uploader, f.name, f.file_size, f.created_at
+        FROM library_file f
+                 JOIN member m ON m.id = f.member_id
+        ORDER BY f.id DESC
+    </select>
+
+    <select id="findById" resultType="com.example.demo.repository.entity.LibraryFile">
+        SELECT id, member_id, name, file_size, created_at
+        FROM library_file
+        WHERE id = #{id}
+    </select>
+
+    <select id="findWithContentById" resultType="com.example.demo.repository.entity.LibraryFile">
+        SELECT id, name, content
+        FROM library_file
+        WHERE id = #{id}
+    </select>
+
+    <delete id="deleteById">
+        DELETE
+        FROM library_file
+        WHERE id = #{id}
+    </delete>
+
+    <insert id="insertReply" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO library_reply (file_id, member_id, content)
+        VALUES (#{fileId}, #{memberId}, #{content})
+    </insert>
+
+    <select id="findAllReplies" resultType="com.example.demo.repository.entity.LibraryReply">
+        SELECT r.id, r.file_id, r.member_id, m.name AS writer, r.content, r.created_at
+        FROM library_reply r
+                 JOIN member m ON m.id = r.member_id
+        ORDER BY r.id
+    </select>
+
+    <select id="findReplyById" resultType="com.example.demo.repository.entity.LibraryReply">
+        SELECT id, file_id, member_id, content, created_at
+        FROM library_reply
+        WHERE id = #{id}
+    </select>
+
+    <delete id="deleteReplyById">
+        DELETE
+        FROM library_reply
+        WHERE id = #{id}
+    </delete>
+</mapper>

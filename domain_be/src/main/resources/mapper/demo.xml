@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.repository.DemoRepository">
+    <insert id="insertYuna">
+        INSERT INTO yuna (yuna, age, hobby, job)
+        VALUES (#{yuna}, #{age}, #{hobby}, #{job})
+    </insert>
+
+    <select id="findAll" resultType="com.example.demo.repository.entity.Yuna">
+        SELECT yuna, age, hobby, job
+        FROM yuna
+        ORDER BY yuna
+    </select>
+
+    <select id="findByJob" resultType="com.example.demo.repository.entity.Yuna">
+        SELECT yuna, age, hobby, job
+        FROM yuna
+        WHERE job = #{job}
+    </select>
+
+    <select id="existsByYuna" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM yuna
+        WHERE yuna = #{yuna}
+    </select>
+
+    <update id="updateYuna">
+        UPDATE yuna
+        SET age   = #{age},
+            hobby = #{hobby},
+            job   = #{job}
+        WHERE yuna = #{yuna}
+    </update>
+
+    <select id="getByYuna" resultType="com.example.demo.repository.entity.Yuna">
+        SELECT yuna, age, hobby, job
+        FROM yuna
+        WHERE yuna = #{yuna}
+    </select>
+
+    <delete id="deleteByYuna">
+        DELETE
+        FROM yuna
+        WHERE yuna = #{yuna}
+    </delete>
+
+
+</mapper>
+
+

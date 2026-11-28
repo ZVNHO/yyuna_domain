@@ -27,4 +27,13 @@ public interface MemberRepository {
     Member findByEmail(String email);// 아이디 찾기
 
     int updatePassword(Member member);// 비밀번호 재설정 (로그인 토큰도 지움)
+
+    // 마이페이지 개인정보 수정 (지금 로그인은 유지)
+    int updateName(Member member);
+
+    int updateEmail(Member member);
+
+    int updatePhone(Member member);
+
+    int changePassword(Member member);
 }

@@ -106,3 +106,15 @@ INSERT INTO yuna (yuna, age, hobby, job)
 SELECT 1, 24, '베이킹', '개발자'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM yuna WHERE yuna = 1);
+-- 마이페이지 이메일 변경 인증 코드 (새 이메일로 발송, 10분 유효)
+CREATE TABLE IF NOT EXISTS email_change
+(
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    member_id  BIGINT       NOT NULL UNIQUE,
+    email      VARCHAR(100) NOT NULL,
+    code_hash  VARCHAR(100) NOT NULL,
+    attempts   INT          NOT NULL DEFAULT 0,
+    expires_at DATETIME     NOT NULL,
+    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (member_id) REFERENCES member (id) ON DELETE CASCADE
+    );

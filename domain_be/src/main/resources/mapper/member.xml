@@ -68,6 +68,31 @@
         WHERE email = #{email}
     </select>
 
+    <!-- 마이페이지 개인정보 수정 (지금 로그인은 그대로 유지) -->
+    <update id="updateName">
+        UPDATE member
+        SET name = #{name}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateEmail">
+        UPDATE member
+        SET email = #{email}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePhone">
+        UPDATE member
+        SET phone = #{phone}
+        WHERE id = #{id}
+    </update>
+
+    <update id="changePassword">
+        UPDATE member
+        SET password = #{password}
+        WHERE id = #{id}
+    </update>
+
     <update id="updatePassword">
         UPDATE member
         SET password = #{password},

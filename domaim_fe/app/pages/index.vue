@@ -73,12 +73,22 @@ const githubUrl = 'https://github.com/ZVNHO'
         />
 
         <div class="flex items-center gap-2">
-          <span
-            v-if="member"
-            class="hidden xl:inline text-sm text-muted"
-          >
-            <b class="text-highlighted">{{ member.name }}</b>님 반가워요
-          </span>
+          <UTooltip text="마이페이지 (내 정보 수정)">
+            <UButton
+              to="/mypage"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-circle-user-round"
+              aria-label="마이페이지"
+            >
+              <span
+                v-if="member"
+                class="hidden xl:inline text-sm text-muted"
+              >
+                <b class="text-highlighted">{{ member.name }}</b>님
+              </span>
+            </UButton>
+          </UTooltip>
           <UTooltip
             v-if="sessionLeft !== null"
             text="눌러서 로그인 30분 연장"

@@ -40,6 +40,18 @@ const upload = ref<UploadState | null>(null)
 const uploading = computed(() => upload.value?.phase === 'uploading' || upload.value?.phase === 'saving')
 const highlightIds = ref(new Set<number>()) // 방금 올린 파일을 목록에서 강조
 
+// 페이지당 30건
+const PAGE_SIZE = 30
+const page = ref(1)
+const pagedFiles = computed(() => files.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
+// 페이지를 바꾸면 목록 맨 위로
+const listTop = ref<HTMLElement | null>(null)
+watch(page, () => listTop.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+// 삭제로 마지막 페이지가 비면 앞 페이지로
+watch(() => files.value.length, (length) => {
+  page.value = Math.min(page.value, Math.max(1, Math.ceil(length / PAGE_SIZE)))
+})
+
 // $fetch는 업로드 진행률을 알려주지 않아서 XMLHttpRequest로 보낸다 (로그인 토큰은 직접 붙인다)
 function sendWithProgress(target: File) {
   return new Promise<void>((resolve, reject) => {
@@ -80,6 +92,7 @@ async function startUpload() {
   try {
     await sendWithProgress(target)
     await refresh()
+    page.value = 1 // 새 파일은 맨 앞에 있으니 첫 페이지로
     upload.value = { ...upload.value!, phase: 'done', progress: 100, finishedAt: new Date().toISOString() }
     file.value = null
     highlightIds.value = new Set(files.value.filter(item => !before.has(item.id)).map(item => item.id))
@@ -141,11 +154,16 @@ function formatDate(value: string) {
     </div>
 
     <UCard class="rounded-2xl">
-      <form class="space-y-3" @submit.prevent="startUpload">
+      <form
+        class="space-y-3"
+        @submit.prevent="startUpload"
+      >
         <UFileUpload
           v-model="file"
           icon="i-lucide-upload"
           label="파일을 끌어다 놓거나 클릭해서 선택하세요"
+          description="선택한 파일은 아래에 이름과 크기로 표시돼요"
+          layout="list"
           class="w-full"
           :disabled="uploading"
         />
@@ -226,8 +244,15 @@ function formatDate(value: string) {
       </form>
     </UCard>
 
-    <div v-if="status === 'pending'" class="space-y-3">
-      <USkeleton v-for="i in 3" :key="i" class="h-20 rounded-2xl" />
+    <div
+      v-if="status === 'pending'"
+      class="space-y-3"
+    >
+      <USkeleton
+        v-for="i in 3"
+        :key="i"
+        class="h-20 rounded-2xl"
+      />
     </div>
 
     <UAlert
@@ -239,27 +264,46 @@ function formatDate(value: string) {
       :actions="[{ label: '다시 시도', color: 'error', variant: 'outline', onClick: () => refresh() }]"
     />
 
-    <div v-else-if="!files.length" class="rounded-2xl border border-dashed border-default py-12 text-center text-muted">
-      <UIcon name="i-lucide-folder-open" class="size-8 text-primary" />
+    <div
+      v-else-if="!files.length"
+      class="rounded-2xl border border-dashed border-default py-12 text-center text-muted"
+    >
+      <UIcon
+        name="i-lucide-folder-open"
+        class="size-8 text-primary"
+      />
       <p class="mt-2">
         아직 등록된 자료가 없어요. 첫 번째 파일을 올려주세요!
       </p>
     </div>
 
-    <ul v-else class="space-y-3">
+    <ul
+      v-else
+      ref="listTop"
+      class="scroll-mt-24 space-y-3"
+    >
       <li
-        v-for="item in files"
+        v-for="item in pagedFiles"
         :key="item.id"
         class="rounded-2xl border p-4 transition"
         :class="highlightIds.has(item.id) ? 'border-success/50 bg-success/10' : 'border-default bg-elevated/40'"
       >
-        <p v-if="highlightIds.has(item.id)" class="mb-2 flex items-center gap-1 text-xs font-semibold text-success">
-          <UIcon name="i-lucide-sparkles" class="size-3.5" />
+        <p
+          v-if="highlightIds.has(item.id)"
+          class="mb-2 flex items-center gap-1 text-xs font-semibold text-success"
+        >
+          <UIcon
+            name="i-lucide-sparkles"
+            class="size-3.5"
+          />
           방금 올린 파일
         </p>
         <div class="flex items-center gap-3">
           <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/15">
-            <UIcon name="i-lucide-file-text" class="size-5 text-primary" />
+            <UIcon
+              name="i-lucide-file-text"
+              class="size-5 text-primary"
+            />
           </div>
           <div class="min-w-0 flex-1">
             <p class="truncate font-semibold text-highlighted">
@@ -297,5 +341,19 @@ function formatDate(value: string) {
         />
       </li>
     </ul>
+
+    <div
+      v-if="files.length > PAGE_SIZE"
+      class="flex flex-col items-center gap-2"
+    >
+      <UPagination
+        v-model:page="page"
+        :total="files.length"
+        :items-per-page="PAGE_SIZE"
+      />
+      <p class="text-xs text-dimmed">
+        전체 {{ files.length }}건
+      </p>
+    </div>
   </div>
 </template>

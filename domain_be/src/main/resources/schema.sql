@@ -13,8 +13,24 @@ CREATE TABLE IF NOT EXISTS member
     password   VARCHAR(100) NOT NULL,
     name       VARCHAR(50)  NOT NULL,
     email      VARCHAR(100) NULL UNIQUE,
+    phone      VARCHAR(20)  NULL UNIQUE,
     token      VARCHAR(100) NULL UNIQUE,
+    token_expires_at DATETIME NULL, -- 로그인 만료 시각 (발급·연장 후 30분)
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+CREATE TABLE IF NOT EXISTS phone_verification
+(
+    id                BIGINT AUTO_INCREMENT PRIMARY KEY,
+    phone             VARCHAR(20)  NOT NULL UNIQUE,
+    code_hash         VARCHAR(100) NOT NULL,
+    attempts          INT          NOT NULL DEFAULT 0,
+    sent_count        INT          NOT NULL DEFAULT 1,
+    window_started_at DATETIME     NOT NULL,
+    last_sent_at      DATETIME     NOT NULL,
+    expires_at        DATETIME     NOT NULL,
+    verified_token    VARCHAR(100) NULL UNIQUE,
+    verified_at       DATETIME     NULL
     );
 
 CREATE TABLE IF NOT EXISTS password_reset

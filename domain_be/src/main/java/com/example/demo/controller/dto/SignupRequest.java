@@ -8,4 +8,6 @@ public class SignupRequest {
     private String password;
     private String name;
     private String email;
+    private String phone;                  // 문자 인증이 켜져 있을 때만 필수
+    private String phoneVerificationToken; // /auth/phone/verify에서 받은 값
 }

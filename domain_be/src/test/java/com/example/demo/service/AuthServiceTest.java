@@ -27,13 +27,15 @@ class AuthServiceTest {
     private final MemberRepository memberRepository = mock(MemberRepository.class);
     private final LoginCodeRepository loginCodeRepository = mock(LoginCodeRepository.class);
     private final MailService mailService = mock(MailService.class);
+    private final SmsService smsService = mock(SmsService.class);
+    private final PhoneVerificationService phoneVerificationService = mock(PhoneVerificationService.class);
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private AuthService service;
     private Member yuna;
 
     @BeforeEach
     void setUp() {
-        service = new AuthService(memberRepository, loginCodeRepository, mailService);
+        service = new AuthService(memberRepository, loginCodeRepository, mailService, smsService, phoneVerificationService);
         yuna = Member.createMember("yuna", encoder.encode("pw1234"), "유나", "yuna0314@gmail.com");
         yuna.setId(7L);
         when(memberRepository.findByUsername("yuna")).thenReturn(yuna);
@@ -48,7 +50,8 @@ class AuthServiceTest {
 
         assertThat(res.isTwoFactorRequired()).isTrue();
         assertThat(res.getToken()).isNull();
-        assertThat(res.getMaskedEmail()).isEqualTo("yu******@gmail.com");
+        assertThat(res.getChannel()).isEqualTo("email");
+        assertThat(res.getSentTo()).isEqualTo("yu******@gmail.com");
 
         ArgumentCaptor<LoginCode> saved = ArgumentCaptor.forClass(LoginCode.class);
         verify(loginCodeRepository).insertCode(saved.capture());
@@ -109,8 +112,28 @@ class AuthServiceTest {
 
         assertThat(res.getToken()).isNotBlank();
         assertThat(res.getUsername()).isEqualTo("yuna");
+        assertThat(res.getSessionSecondsLeft()).isEqualTo(30 * 60L);
         verify(loginCodeRepository).deleteByMemberId(7L);
         verify(memberRepository).updateToken(yuna);
+    }
+
+    @Test
+    void 로그인_연장은_다시_30분() {
+        yuna.setSessionSecondsLeft(45L);
+        when(memberRepository.findByToken("tok")).thenReturn(yuna);
+
+        Member extended = service.extendSession("Bearer tok");
+
+        assertThat(extended.getSessionSecondsLeft()).isEqualTo(30 * 60L);
+        verify(memberRepository).extendToken(7L);
+    }
+
+    @Test
+    void 만료된_토큰이면_연장할_수_없다() {
+        assertThatThrownBy(() -> service.extendSession("Bearer expired"))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("로그인이 만료되었습니다");
+        verify(memberRepository, never()).extendToken(anyLong());
     }
 
     @Test
@@ -130,6 +153,46 @@ class AuthServiceTest {
         assertThatThrownBy(() -> service.verifyLoginCode(verifyRequest("nope", "123456")))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("다시 로그인");
+    }
+
+    @Test
+    void 휴대폰_번호가_있으면_이메일_대신_문자로_인증번호를_보낸다() {
+        yuna.setPhone("01012345678");
+        when(smsService.isConfigured()).thenReturn(true);
+        when(smsService.trySend(any(), any())).thenReturn(true);
+
+        LoginResponse res = service.login(login("yuna", "pw1234"));
+
+        assertThat(res.isTwoFactorRequired()).isTrue();
+        assertThat(res.getChannel()).isEqualTo("sms");
+        assertThat(res.getSentTo()).isEqualTo("010-****-5678");
+        ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
+        verify(smsService).trySend(eq("01012345678"), text.capture());
+        assertThat(text.getValue()).startsWith("[유나의빵집] 로그인 인증번호 [").matches(".*\\[\\d{6}].*");
+        assertThat(text.getValue().getBytes(java.nio.charset.Charset.forName("EUC-KR")).length)
+                .as("SMS 한 통(90바이트) 안에 들어가야 한다").isLessThanOrEqualTo(90);
+        verify(mailService, never()).trySend(any(), any(), any());
+    }
+
+    @Test
+    void 문자를_못_보내면_503() {
+        yuna.setPhone("01012345678");
+        when(smsService.isConfigured()).thenReturn(true);
+        when(smsService.trySend(any(), any())).thenReturn(false);
+
+        assertThatThrownBy(() -> service.login(login("yuna", "pw1234")))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("인증 문자를 보내지 못했어요");
+    }
+
+    @Test
+    void 문자_설정이_없으면_휴대폰이_있어도_이메일로_보낸다() {
+        yuna.setPhone("01012345678");
+
+        LoginResponse res = service.login(login("yuna", "pw1234"));
+
+        assertThat(res.getChannel()).isEqualTo("email");
+        verify(smsService, never()).trySend(any(), any());
     }
 
     private static LoginRequest login(String username, String password) {

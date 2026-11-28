@@ -79,14 +79,16 @@ function backToPassword() {
 
 <template>
   <AuthShell title="로그인" description="갓 구운 빵 냄새가 나는 곳으로 들어오세요">
-    <!-- 2단계: 이메일 인증 코드 -->
+    <!-- 2단계: 문자(휴대폰 번호가 있는 회원) 또는 이메일 인증 코드 -->
     <form v-if="twoFactor" class="space-y-4" @submit.prevent="onVerify">
       <UAlert
         :color="codeLeft > 0 ? 'success' : 'warning'"
         variant="subtle"
-        :icon="codeLeft > 0 ? 'i-lucide-shield-check' : 'i-lucide-timer-off'"
-        :title="codeLeft > 0 ? `${twoFactor.maskedEmail} 로 인증 코드를 보냈어요` : '인증 코드가 만료됐어요'"
-        :description="codeLeft > 0 ? '계정 보호를 위해 메일로 받은 6자리 코드를 입력해 주세요.' : '「코드 다시 받기」를 눌러 새 코드를 받아주세요.'"
+        :icon="codeLeft > 0 ? (twoFactor.channel === 'sms' ? 'i-lucide-smartphone' : 'i-lucide-shield-check') : 'i-lucide-timer-off'"
+        :title="codeLeft > 0 ? `${twoFactor.sentTo} 로 인증번호를 보냈어요` : '인증번호가 만료됐어요'"
+        :description="codeLeft > 0
+          ? `계정 보호를 위해 ${twoFactor.channel === 'sms' ? '문자' : '메일'}로 받은 6자리 번호를 입력해 주세요.`
+          : '「코드 다시 받기」를 눌러 새 번호를 받아주세요.'"
       />
 
       <UFormField label="인증 코드" :error="errorMessage || undefined">

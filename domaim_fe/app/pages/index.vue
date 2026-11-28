@@ -3,7 +3,19 @@ import type { TabsItem } from '@nuxt/ui'
 
 definePageMeta({ middleware: 'auth' })
 
-const { token, member, fetchMe, logout } = useAuth()
+const { token, member, fetchMe, logout, extendSession } = useAuth()
+const { secondsLeft: sessionLeft, label: sessionLabel } = useSessionTimer()
+const toast = useToast()
+
+// 헤더의 남은 시간을 누르면 바로 30분 연장
+async function extendNow() {
+  try {
+    await extendSession()
+    toast.add({ title: '로그인을 30분 연장했어요', color: 'success', icon: 'i-lucide-timer-reset' })
+  } catch (error) {
+    toast.add({ title: apiErrorMessage(error, '연장하지 못했어요.'), color: 'error' })
+  }
+}
 
 // 토큰이 만료됐으면 fetchMe가 토큰을 지우므로 로그인 페이지로 보낸다
 onMounted(async () => {
@@ -42,7 +54,11 @@ const githubUrl = 'https://github.com/ZVNHO'
           class="flex h-16 items-center gap-2 transition hover:opacity-80"
           @click="goHome"
         >
-          <img src="/images/sheep.png" alt="" class="size-9 rounded-full object-cover bg-black">
+          <img
+            src="/images/sheep.png"
+            alt=""
+            class="size-9 rounded-full object-cover bg-black"
+          >
           <span class="font-bold text-highlighted">Yuna's Bakery Lab</span>
         </NuxtLink>
 
@@ -57,9 +73,27 @@ const githubUrl = 'https://github.com/ZVNHO'
         />
 
         <div class="flex items-center gap-2">
-          <span v-if="member" class="hidden xl:inline text-sm text-muted">
+          <span
+            v-if="member"
+            class="hidden xl:inline text-sm text-muted"
+          >
             <b class="text-highlighted">{{ member.name }}</b>님 반가워요
           </span>
+          <UTooltip
+            v-if="sessionLeft !== null"
+            text="눌러서 로그인 30분 연장"
+          >
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-timer"
+              :label="sessionLabel"
+              :aria-label="`로그인 남은 시간 ${sessionLabel}, 눌러서 연장`"
+              class="tabular-nums"
+              :class="sessionLeft <= 120 ? 'text-warning' : ''"
+              @click="extendNow"
+            />
+          </UTooltip>
           <UButton
             :to="githubUrl"
             target="_blank"
@@ -124,7 +158,11 @@ const githubUrl = 'https://github.com/ZVNHO'
 
     <footer class="border-t border-default py-6 text-center text-sm text-muted">
       © 2026 Yuna's Bakery Lab · 오늘도 맛있게 🍞 ·
-      <ULink :to="githubUrl" target="_blank" class="font-medium text-primary">
+      <ULink
+        :to="githubUrl"
+        target="_blank"
+        class="font-medium text-primary"
+      >
         GitHub
       </ULink>
     </footer>

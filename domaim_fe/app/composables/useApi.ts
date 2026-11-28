@@ -3,6 +3,11 @@ export function useAuthToken() {
   return useCookie<string | null>('token', { maxAge: 60 * 60 * 24 * 7, sameSite: 'lax' })
 }
 
+// 로그인 만료 시각 (밀리초). 새로고침해도 남도록 토큰과 같이 쿠키에 둔다
+export function useSessionExpiresAt() {
+  return useCookie<number | null>('sessionExpiresAt', { maxAge: 60 * 60 * 24 * 7, sameSite: 'lax' })
+}
+
 // Spring Boot API 호출: 로그인 토큰을 Authorization 헤더에 자동으로 붙인다
 export function useApi() {
   const { public: { apiBase } } = useRuntimeConfig()

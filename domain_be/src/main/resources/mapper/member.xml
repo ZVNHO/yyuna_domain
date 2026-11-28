@@ -4,8 +4,8 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.demo.repository.MemberRepository">
     <insert id="insertMember" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO member (username, password, name, email)
-        VALUES (#{username}, #{password}, #{name}, #{email})
+        INSERT INTO member (username, password, name, email, phone)
+        VALUES (#{username}, #{password}, #{name}, #{email}, #{phone})
     </insert>
 
     <select id="existsByUsername" resultType="boolean">
@@ -15,27 +15,39 @@
     </select>
 
     <select id="findByUsername" resultType="com.example.demo.repository.entity.Member">
-        SELECT id, username, password, name, email, token
+        SELECT id, username, password, name, email, phone, token
         FROM member
         WHERE username = #{username}
     </select>
 
+    <!-- 만료 시각이 지난 토큰은 없는 것으로 본다 (시간 계산은 모두 DB의 NOW() 기준) -->
     <select id="findByToken" resultType="com.example.demo.repository.entity.Member">
-        SELECT id, username, password, name, email, token
+        SELECT id, username, password, name, email, phone, token,
+               TIMESTAMPDIFF(SECOND, NOW(), token_expires_at) AS session_seconds_left
         FROM member
         WHERE token = #{token}
+          AND token_expires_at > NOW()
     </select>
 
     <select id="findById" resultType="com.example.demo.repository.entity.Member">
-        SELECT id, username, password, name, email, token
+        SELECT id, username, password, name, email, phone, token
         FROM member
         WHERE id = #{id}
     </select>
 
     <update id="updateToken">
         UPDATE member
-        SET token = #{token}
+        SET token            = #{token},
+            token_expires_at = CASE WHEN #{token} IS NULL THEN NULL ELSE NOW() + INTERVAL ${@com.example.demo.service.AuthService@SESSION_MINUTES} MINUTE END
         WHERE id = #{id}
+    </update>
+
+    <!-- 로그인 연장: 지금부터 다시 30분 -->
+    <update id="extendToken">
+        UPDATE member
+        SET token_expires_at = NOW() + INTERVAL ${@com.example.demo.service.AuthService@SESSION_MINUTES} MINUTE
+        WHERE id = #{id}
+          AND token IS NOT NULL
     </update>
 
     <select id="existsByEmail" resultType="boolean">
@@ -44,8 +56,14 @@
         WHERE email = #{email}
     </select>
 
+    <select id="existsByPhone" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM member
+        WHERE phone = #{phone}
+    </select>
+
     <select id="findByEmail" resultType="com.example.demo.repository.entity.Member">
-        SELECT id, username, password, name, email, token
+        SELECT id, username, password, name, email, phone, token
         FROM member
         WHERE email = #{email}
     </select>
@@ -53,7 +71,8 @@
     <update id="updatePassword">
         UPDATE member
         SET password = #{password},
-            token    = NULL
+            token    = NULL,
+            token_expires_at = NULL
         WHERE id = #{id}
     </update>
 </mapper>

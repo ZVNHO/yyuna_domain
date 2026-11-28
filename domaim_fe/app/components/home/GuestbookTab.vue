@@ -14,6 +14,18 @@ const { data: entries, status, refresh } = useLazyAsyncData('guestbook', () => a
   default: () => []
 })
 
+// 페이지당 30건
+const PAGE_SIZE = 30
+const page = ref(1)
+const pagedEntries = computed(() => entries.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
+// 페이지를 바꾸면 목록 맨 위로
+const listTop = ref<HTMLElement | null>(null)
+watch(page, () => listTop.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+// 삭제로 마지막 페이지가 비면 앞 페이지로
+watch(() => entries.value.length, (length) => {
+  page.value = Math.min(page.value, Math.max(1, Math.ceil(length / PAGE_SIZE)))
+})
+
 const content = ref('')
 const posting = ref(false)
 
@@ -25,6 +37,7 @@ async function submit() {
     content.value = ''
     toast.add({ title: '방명록을 남겼어요!', color: 'success' })
     await refresh()
+    page.value = 1 // 새 글은 맨 앞에 있으니 첫 페이지로
   } catch (error) {
     toast.add({ title: apiErrorMessage(error, '등록에 실패했습니다.'), color: 'error' })
   } finally {
@@ -84,7 +97,10 @@ function formatDate(value: string) {
     </div>
 
     <UCard class="rounded-2xl">
-      <form class="space-y-3" @submit.prevent="submit">
+      <form
+        class="space-y-3"
+        @submit.prevent="submit"
+      >
         <UTextarea
           v-model="content"
           :rows="3"
@@ -106,8 +122,15 @@ function formatDate(value: string) {
       </form>
     </UCard>
 
-    <div v-if="status === 'pending'" class="space-y-3">
-      <USkeleton v-for="i in 3" :key="i" class="h-24 rounded-2xl" />
+    <div
+      v-if="status === 'pending'"
+      class="space-y-3"
+    >
+      <USkeleton
+        v-for="i in 3"
+        :key="i"
+        class="h-24 rounded-2xl"
+      />
     </div>
 
     <UAlert
@@ -119,28 +142,48 @@ function formatDate(value: string) {
       :actions="[{ label: '다시 시도', color: 'error', variant: 'outline', onClick: () => refresh() }]"
     />
 
-    <div v-else-if="!entries.length" class="rounded-2xl border border-dashed border-default py-12 text-center text-muted">
-      <UIcon name="i-lucide-message-circle-heart" class="size-8 text-primary" />
+    <div
+      v-else-if="!entries.length"
+      class="rounded-2xl border border-dashed border-default py-12 text-center text-muted"
+    >
+      <UIcon
+        name="i-lucide-message-circle-heart"
+        class="size-8 text-primary"
+      />
       <p class="mt-2">
         아직 방명록이 없어요. 첫 번째 글을 남겨주세요!
       </p>
     </div>
 
-    <ul v-else class="space-y-3">
+    <ul
+      v-else
+      ref="listTop"
+      class="scroll-mt-24 space-y-3"
+    >
       <li
-        v-for="entry in entries"
+        v-for="entry in pagedEntries"
         :key="entry.id"
         class="flex gap-3 rounded-2xl border border-default bg-elevated/40 p-4"
       >
-        <UAvatar :alt="entry.writer" size="md" class="bg-primary/15 text-primary" />
+        <UAvatar
+          :alt="entry.writer"
+          size="md"
+          class="bg-primary/15 text-primary"
+        />
         <div class="min-w-0 flex-1">
           <div class="flex items-center justify-between gap-2">
             <p class="text-sm">
               <span class="font-semibold text-highlighted">{{ entry.writer }}</span>
               <span class="ml-2 text-xs text-dimmed">{{ formatDate(entry.createdAt) }}</span>
-              <span v-if="entry.edited" class="ml-1 text-xs text-dimmed">(수정됨)</span>
+              <span
+                v-if="entry.edited"
+                class="ml-1 text-xs text-dimmed"
+              >(수정됨)</span>
             </p>
-            <div v-if="entry.mine && editingId !== entry.id" class="flex">
+            <div
+              v-if="entry.mine && editingId !== entry.id"
+              class="flex"
+            >
               <UButton
                 color="neutral"
                 variant="ghost"
@@ -160,7 +203,11 @@ function formatDate(value: string) {
             </div>
           </div>
 
-          <form v-if="editingId === entry.id" class="mt-2 space-y-2" @submit.prevent="saveEdit(entry)">
+          <form
+            v-if="editingId === entry.id"
+            class="mt-2 space-y-2"
+            @submit.prevent="saveEdit(entry)"
+          >
             <UTextarea
               v-model="editText"
               :rows="3"
@@ -189,7 +236,10 @@ function formatDate(value: string) {
               </div>
             </div>
           </form>
-          <p v-else class="mt-1 whitespace-pre-line break-words text-default">
+          <p
+            v-else
+            class="mt-1 whitespace-pre-line break-words text-default"
+          >
             {{ entry.content }}
           </p>
 
@@ -204,5 +254,19 @@ function formatDate(value: string) {
         </div>
       </li>
     </ul>
+
+    <div
+      v-if="entries.length > PAGE_SIZE"
+      class="flex flex-col items-center gap-2"
+    >
+      <UPagination
+        v-model:page="page"
+        :total="entries.length"
+        :items-per-page="PAGE_SIZE"
+      />
+      <p class="text-xs text-dimmed">
+        전체 {{ entries.length }}건
+      </p>
+    </div>
   </div>
 </template>
